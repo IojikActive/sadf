@@ -3,7 +3,6 @@ import requests
 import json
 import sys
 import logging
-import html_to_json
 import time
 from webdriver_manager.chrome import ChromeDriverManager
 
@@ -23,13 +22,30 @@ def init_driver():
     
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("log-level=3")
-    # chrome_options.add_argument("headless")
+    chrome_options.add_argument("headless")
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=chrome_options)
     return driver
 
 
+def parse_file(): 
+    logger.debug("start parse file with urls")
+    urls = list()
+    try:
+        with open("urls.txt","r",encoding="utf-8") as inputFile:
+            for line in inputFile:
+                if (line == ''):
+                    break
+                if(line != '\n'):
+                    urls.append(line.strip())
+                else:
+                    break
+    except BaseException as e:
+        logger.error(f"Unexpected {e=},{type(e)=}")
+        logger.error("Error: {tip=}",exc_info=True)
+        print("BAD parsing file with Articles")
 
+    return urls
 def get_url_product():
     pass
     # return result_url_str
@@ -51,11 +67,19 @@ def get_json(driver):
         json.dump(html_string, file, ensure_ascii=False)
         # html_string = json.loads(html_string )
         # logger.warning(html_string)
+    
+    driver.close()
     return html_string
 
 def get_product_info(result):
     product = {}
-    widgets = result["widgetStates"]
+    
+    result_json = json.dumps(result)
+    result_json = json.loads(result_json)
+    widgets = result_json["widgetStates"]
+    # widgets_json = json.load(result)
+    # widgets = widgets_json["widgetStates"]
+
     for widget_name, widget_value in widgets.items():
         widget_value = json.loads(widget_value)
         if "webSale" in widget_name:
@@ -78,6 +102,7 @@ def main():
 
     with open('ozon_1.json', 'r', encoding='utf-8') as file:
         result = json.load(file)
+        logger.info("Load json")
         get_product_info(result)
 
 
